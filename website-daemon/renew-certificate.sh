@@ -3,7 +3,7 @@ cert_input_path="https://www.ieee-security.org/TC/W2SP/2012/papers/w2sp12-final9
 cert_output_path="/home/nobellet/short-lived-cert/website-daemon/certificate.pdf"
 
 print_usage() {
-    printf "Usage: $0 [-i input] [-o output]\n"
+    printf "Usage: $0 [-i certificate_download_url] [-o certificate_path]\n"
 }
 
 while getopts 'i:o:' flag; do
