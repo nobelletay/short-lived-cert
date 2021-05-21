@@ -7,18 +7,18 @@
 3. In folder CA/script, middle-daemon/script, website-daemon/script, run go build
 
 # Run
-CA
+CA: 
 ./CA [masterkey] [domain_name]
 
 To release a daily key, run 
 [domain_name] [num_of_day]
 
-Middle daemon
+Middle daemon: 
 ./Middle-daemon
 To release a certificate, run 
 [domain_name] [num_of_day]
 
-Website daemon
+Website daemon: 
 ./Website-daemon
 To verify a certificate, run
 [domain_name] [num_of_day]
