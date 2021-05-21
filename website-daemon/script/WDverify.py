@@ -4,21 +4,22 @@ Created on Wed May 19 00:38:21 2021
 
 @author: galan
 """
-
+#!/usr/local/bin/python
 import pickle
 import hashlib
 import merklelib
+import sys
 
 def hashfunc(value):
     return hashlib.sha256(value).hexdigest()
 
-
-proof_path = "C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/Website Daemon Storage/Daily Cert Verification/proof.pickle"
+print("hello")
+proof_path = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/proof.pickle"
 with open(proof_path, 'rb') as f:
     proof = pickle.load(f)
     
-hash_path = "C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/Website Daemon Storage/Daily Cert Verification/cert_hash.txt"
-root_path = "C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/Website Daemon Storage/Daily Cert Verification/merkleroot.txt"
+hash_path = "../storage/Daily Cert Verification/cert_hash.txt"
+root_path = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/merkleroot.txt"
 
 
 with open(hash_path) as f:

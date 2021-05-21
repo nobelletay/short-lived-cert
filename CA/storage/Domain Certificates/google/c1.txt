@@ -1,8 +1,0 @@
------------Start Certificate------------
-
-Domain Name: Google
-PK: fhq81oufhn1--ufh1hf09jf98h4082hfeHFOEF2J09FH20FJ2Q
-Begins on:  05/25/21
-Expires on: 05/29/21
-
--------------End Certificate-------------

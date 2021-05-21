@@ -1,4 +1,4 @@
-module example.com/hello
+module Middle_daemon
 
 go 1.16
 

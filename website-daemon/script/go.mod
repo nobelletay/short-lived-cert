@@ -1,4 +1,4 @@
-module example.com/hello
+module Website-daemon
 
 go 1.16
 

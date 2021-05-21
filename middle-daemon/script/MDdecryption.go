@@ -6,10 +6,53 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
-	"strings"
+	"strconv"
 )
+
+func main_decrypt(domain_name string, num_of_cert int) {
+	keypath := "../../CA-middle-daemon-storage/Daily Keys/" + domain_name + "/daily_key.txt"
+	// count := 0
+	// for count < num_of_cert {
+	// Read entire file content
+	daily_key, err := ioutil.ReadFile(keypath)
+	check(err)
+
+	// err = os.Remove(keypath)
+	// check(err)
+
+	// Convert []byte to string
+	key := string(daily_key)
+
+	// Read entire file content
+	cipher, err := ioutil.ReadFile("../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name + "/enc_cert" + strconv.Itoa(num_of_cert) + ".txt")
+	check(err)
+
+	// Convert []byte to string
+	encrypted := string(cipher)
+
+	decrypted := decrypt(encrypted, key)
+
+	certpath := "../../middle-daemon-website-daemon-storage/Daily Certificates/" + domain_name
+	if _, err := os.Stat(certpath); os.IsNotExist(err) {
+		os.Mkdir(certpath, 0700)
+	}
+
+	f, err := os.Create(certpath + "/certday" + strconv.Itoa(num_of_cert) + ".pem")
+	check(err)
+	l, err := f.WriteString(decrypted)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+	fmt.Println(l, "bytes written successfully --- Decrypted certificate written in shared storage")
+	err = f.Close()
+	check(err)
+	// count += 1
+	// }
+
+}
 
 func decrypt(encryptedString string, keyString string) (decryptedString string) {
 
@@ -36,61 +79,7 @@ func decrypt(encryptedString string, keyString string) (decryptedString string) 
 
 	//Decrypt the data
 	plaintext, err := aesGCM.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		panic(err.Error())
-	}
+	check(err)
 
 	return fmt.Sprintf("%s", plaintext)
-}
-
-func main() {
-	var domain_name string
-	var day_num string
-
-	fmt.Println("Enter domain name: ")
-
-	fmt.Scanln(&domain_name)
-	domain_name = strings.ToLower(domain_name)
-
-	fmt.Println("Enter day number: ")
-
-	fmt.Scanln(&day_num)
-
-	// Read entire file content
-	content, err := ioutil.ReadFile("C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/CA Middle Daemon Storage/Daily Keys/" + domain_name + "/daily_key.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Convert []byte to string
-	key := string(content)
-
-	// Read entire file content
-	cipher, err := ioutil.ReadFile("C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/CA Middle Daemon Storage/Encrypted Certificates/" + domain_name + "/encryptedc" + day_num + ".txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Convert []byte to string
-	encrypted := string(cipher)
-
-	decrypted := decrypt(encrypted, key)
-
-	f, err := os.Create("C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/Middle Daemon Website Daemon Storage/Daily Certificates/" + domain_name + "/certday" + day_num + ".txt")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	l, err := f.WriteString(decrypted)
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
-	}
-	fmt.Println(l, "bytes written successfully")
-	err = f.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 }

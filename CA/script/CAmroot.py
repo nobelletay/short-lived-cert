@@ -4,16 +4,19 @@ Created on Tue May 18 22:29:40 2021
 
 @author: galan
 """
+#!/usr/bin/env python
 
 import hashlib
 from merklelib import MerkleTree
+from pathlib import Path
+import sys
 
 def hashfunc(value):
     return hashlib.sha256(value).hexdigest()
 
-dom_name = input("Enter domain name: ")
+dom_name = sys.argv[1]
 
-file_name = "C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/CA Middle Daemon Storage/Hashlists/" + dom_name + "/hashlist.txt"
+file_name = "../../CA-middle-daemon-storage/Hashlists/" + dom_name + "/hashlist.txt"
 
 hash_file = open(file_name, 'r')
 
@@ -27,10 +30,11 @@ hash_file.close()
 tree = MerkleTree(hash_list, hashfunc)
 
 root = tree.merkle_root
+Path("../storage/Merkle Roots/" + dom_name).mkdir(parents=True, exist_ok=True)
 
 
-root_file = "C:/Users/galan/Desktop/Stanford Classes/Crypto Research/Storage Folders/CA Storage/Merkle Roots/" + dom_name + "/merkleroot.txt"
+root_file = "../storage/Merkle Roots/" + dom_name + "/merkleroot.txt"
 
-text_file = open(root_file, "w")
+text_file = open(root_file, "w+")
 n = text_file.write(root)
 text_file.close()
