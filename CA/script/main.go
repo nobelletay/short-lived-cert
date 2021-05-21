@@ -18,7 +18,7 @@ import (
 )
 
 // Subject to change
-const num_of_cert = 1
+const num_of_cert = 3
 
 type Ca struct {
 	certificate      tls.Certificate

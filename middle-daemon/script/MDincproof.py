@@ -16,7 +16,6 @@ def hashfunc(value):
 
 dom_name = sys.argv[1]
 day_num = sys.argv[2]
-print(int(day_num))
 file_name = "../../CA-middle-daemon-storage/Hashlists/" + dom_name + "/hashlist.txt"
 
 hash_file = open(file_name, 'r')
@@ -31,14 +30,13 @@ tree = MerkleTree(hash_list, hashfunc)
 
 # Write root
 root = tree.merkle_root
-print(type(root))
 root_file = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/merkleroot.txt"
 
 text_file = open(root_file, "w+")
 n = text_file.write(root)
 text_file.close()
 
-proof = tree.get_proof(hash_list[int(day_num)-1])
+proof = tree.get_proof(hash_list[int(day_num)])
 
 filename = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/proof.pickle"
 

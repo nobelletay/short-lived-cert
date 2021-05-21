@@ -57,7 +57,6 @@ func main() {
 			ex, err := os.Executable()
 			check(err)
 			exPath := filepath.Dir(ex)
-			fmt.Println(exPath)
 			file := exPath + "/WDverify.py"
 			c := exec.Command("python", file)
 			if err := c.Run(); err != nil {

@@ -13,7 +13,6 @@ import sys
 def hashfunc(value):
     return hashlib.sha256(value).hexdigest()
 
-print("hello")
 proof_path = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/proof.pickle"
 with open(proof_path, 'rb') as f:
     proof = pickle.load(f)
@@ -31,9 +30,12 @@ with open(root_path) as f:
     contents = f.readlines()
 
 root = contents[0]
+result_file = "../storage/result/result.txt"
 
+text_file = open(result_file, "w+")
 
 if (merklelib.verify_leaf_inclusion(cert_hash, proof, hashfunc, root)):
-    print("Present certificate is valid")
+    n = text_file.write("Present certificate is valid")
 else:
-    print("Present certificate is not valid")
+    n = text_file.write("Present certificate is not valid")
+text_file.close()
