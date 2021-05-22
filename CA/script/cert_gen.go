@@ -14,10 +14,12 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/big"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -32,16 +34,44 @@ func GenRSA(*rsa.PrivateKey, error) *rsa.PrivateKey {
 	return key
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func ParseRsaPrivateKeyFromPemStr(privPEM string) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(privPEM))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return priv, nil
+}
+
 func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, hash_list *[][]byte, hashlist_string *[num_of_cert]string) {
 	// Prepare directory
-	certpath := "../storage/Domain Certificates/" + domain_name
+	certpath := "../storage/domain-certificates/" + domain_name
 	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
+	privkeyPath := "../storage/domain-privkey/" + domain_name + "/key.pem"
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.Mkdir(certpath, 0744)
 	}
 	if _, err := os.Stat(enc_certpath); os.IsNotExist(err) {
-		os.Mkdir(enc_certpath, 0700)
+		os.Mkdir(enc_certpath, 0744)
 	}
+
+	// Load domain RSA key
+	key, err := ioutil.ReadFile(privkeyPath)
+	check(err)
+
+	privkey, err := ParseRsaPrivateKeyFromPemStr(string(key))
+	check(err)
 
 	// Get Root certificate
 	cert_auth, err := x509.ParseCertificate(ca.certificate.Certificate[0])
@@ -62,7 +92,7 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 		&certificate,
 		cert_auth,
 		pubkey,
-		ca.certificate.PrivateKey)
+		privkey)
 	check(err)
 
 	// Export original certificate
@@ -129,8 +159,8 @@ func genCA() {
 	var CacertOut, CakeyOut bytes.Buffer
 	pem.Encode(&CacertOut, &pem.Block{Type: "CERTIFICATE", Bytes: Cacrt})
 	pem.Encode(&CakeyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(Caprivatekey)})
-	ioutil.WriteFile("./ca/ca_cert.pem", CacertOut.Bytes(), 0644)
-	ioutil.WriteFile("./ca/ca_key.pem", CakeyOut.Bytes(), 0644)
+	ioutil.WriteFile("./ca/ca_cert.pem", CacertOut.Bytes(), 0744)
+	ioutil.WriteFile("./ca/ca_key.pem", CakeyOut.Bytes(), 0744)
 }
 
 func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
@@ -140,12 +170,13 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	}
 
 	certpath := "../storage/Precertificate/" + domain_name
+	privkeyPath := "../storage/domain-privkey/" + domain_name + "/key.pem"
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.Mkdir(certpath, 0744)
 	}
 
 	// Load CA
-	catls, err := tls.LoadX509KeyPair("../storage/Root Certificate/ca_cert.pem", "../storage/Root Certificate/ca_key.pem")
+	catls, err := tls.LoadX509KeyPair("../storage/root-certificate/ca_cert.pem", "../storage/root-certificate/ca_key.pem")
 	if err != nil {
 		panic(err)
 	}
@@ -180,22 +211,37 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		DNSNames:        []string{domain_name},
 		ExtraExtensions: extension,
 	}
+
+	if ip := net.ParseIP(domain_name); ip != nil {
+		template.IPAddresses = append(template.IPAddresses, ip)
+	} else {
+		template.DNSNames = append(template.DNSNames, domain_name)
+	}
 	// privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
 	// if err != nil {
 	// 	panic(err)
 	// }
+
+	// Load domain RSA key
+	key, err := ioutil.ReadFile(privkeyPath)
+	check(err)
+
+	privkey, err := ParseRsaPrivateKeyFromPemStr(string(key))
+	check(err)
+
 	crt, err := x509.CreateCertificate(rand.Reader,
 		&template,
 		ca,
 		pubkey,
-		catls.PrivateKey)
+		privkey)
 	if err != nil {
 		panic(err)
 	}
+
 	var certOut bytes.Buffer
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
 	// pem.Encode(&keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)})
 	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0644)
-	ioutil.WriteFile(certpath+"/cert.pem", certOut.Bytes(), 0644)
+	ioutil.WriteFile(certpath+"/cert.pem", certOut.Bytes(), 0744)
 
 }

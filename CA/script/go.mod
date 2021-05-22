@@ -9,6 +9,7 @@ require (
 	github.com/tendermint/tendermint v0.34.10
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
+	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 )
 
 // replace github.com/tendermint/tendermint => /Users/Maggie/go/pkg/mod/github.com/tendermint/tendermint@v0.34.10

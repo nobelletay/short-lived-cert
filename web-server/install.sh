@@ -12,6 +12,6 @@ tar -xzvf nginx-1.8.1.tar.gz
 
 # compile and install it
 cd nginx-1.8.1
-./configure --prefix=~/.local/opt/nginx --with-pcre=~/.local/src/pcre-7.8
+./configure --prefix=~/.local/opt/nginx --with-pcre=~/.local/src/pcre-7.8 --with-http_ssl_module
 make
 make install
