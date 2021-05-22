@@ -37,10 +37,10 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 	certpath := "../storage/Domain Certificates/" + domain_name
 	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.Mkdir(certpath, 0744)
 	}
 	if _, err := os.Stat(enc_certpath); os.IsNotExist(err) {
-		os.Mkdir(enc_certpath, 0700)
+		os.Mkdir(enc_certpath, 0744)
 	}
 
 	// Get Root certificate
@@ -129,8 +129,8 @@ func genCA() {
 	var CacertOut, CakeyOut bytes.Buffer
 	pem.Encode(&CacertOut, &pem.Block{Type: "CERTIFICATE", Bytes: Cacrt})
 	pem.Encode(&CakeyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(Caprivatekey)})
-	ioutil.WriteFile("./ca/ca_cert.pem", CacertOut.Bytes(), 0644)
-	ioutil.WriteFile("./ca/ca_key.pem", CakeyOut.Bytes(), 0644)
+	ioutil.WriteFile("./ca/ca_cert.pem", CacertOut.Bytes(), 0744)
+	ioutil.WriteFile("./ca/ca_key.pem", CakeyOut.Bytes(), 0744)
 }
 
 func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
@@ -141,7 +141,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 
 	certpath := "../storage/Precertificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.Mkdir(certpath, 0744)
 	}
 
 	// Load CA
@@ -195,7 +195,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	var certOut bytes.Buffer
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
 	// pem.Encode(&keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)})
-	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0644)
-	ioutil.WriteFile(certpath+"/cert.pem", certOut.Bytes(), 0644)
+	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0744)
+	ioutil.WriteFile(certpath+"/cert.pem", certOut.Bytes(), 0744)
 
 }
