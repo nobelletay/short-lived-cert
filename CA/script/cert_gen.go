@@ -14,6 +14,7 @@ import (
 	"encoding/asn1"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -32,16 +33,44 @@ func GenRSA(*rsa.PrivateKey, error) *rsa.PrivateKey {
 	return key
 }
 
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func ParseRsaPrivateKeyFromPemStr(privPEM string) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(privPEM))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return priv, nil
+}
+
 func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, hash_list *[][]byte, hashlist_string *[num_of_cert]string) {
 	// Prepare directory
 	certpath := "../storage/Domain Certificates/" + domain_name
 	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
+	privkeyPath := "../storage/domain-privkey/" + domain_name + "/key.pem"
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.Mkdir(certpath, 0700)
 	}
 	if _, err := os.Stat(enc_certpath); os.IsNotExist(err) {
 		os.Mkdir(enc_certpath, 0700)
 	}
+
+	// Load domain RSA key
+	key, err := ioutil.ReadFile(privkeyPath)
+	check(err)
+
+	privkey, err := ParseRsaPrivateKeyFromPemStr(string(key))
+	check(err)
 
 	// Get Root certificate
 	cert_auth, err := x509.ParseCertificate(ca.certificate.Certificate[0])
@@ -140,6 +169,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	}
 
 	certpath := "../storage/Precertificate/" + domain_name
+	privkeyPath := "../storage/domain-privkey/" + domain_name + "/key.pem"
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.Mkdir(certpath, 0700)
 	}
@@ -184,6 +214,14 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	// if err != nil {
 	// 	panic(err)
 	// }
+
+	// Load domain RSA key
+	key, err := ioutil.ReadFile(privkeyPath)
+	check(err)
+
+	privkey, err := ParseRsaPrivateKeyFromPemStr(string(key))
+	check(err)
+
 	crt, err := x509.CreateCertificate(rand.Reader,
 		&template,
 		ca,

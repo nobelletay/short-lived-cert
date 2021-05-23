@@ -2,11 +2,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,13 +48,28 @@ func main() {
 	master_key := os.Args[1]
 	ca := new(master_key)
 
-	// Load domain RSA key
-	fmt.Println("Loading domain public key...")
-	key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
-	check(err)
+	// Generate domain RSA key
+	privkeyDir := "../storage/domain-privkey/" + domain_name
+	pubkeyDir := "../storage/domain-pubkey/" + domain_name
+	if _, err := os.Stat(privkeyDir); os.IsNotExist(err) {
+		os.Mkdir(privkeyDir, 0744)
+	}
+	if _, err := os.Stat(pubkeyDir); os.IsNotExist(err) {
+		os.Mkdir(pubkeyDir, 0744)
+	}
+	privkey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		panic(err)
+	}
+	pubkey := privkey.PublicKey
 
-	pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
-	check(err)
+	var privkeyOut bytes.Buffer
+	pem.Encode(&privkeyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privkey)})
+	ioutil.WriteFile(privkeyDir + "/key.pem", privkeyOut.Bytes(), 0744)
+	//var domainPubkeyOut bytes.Buffer
+	//pem.Encode(&domainPubkeyOut, &pem.Block{Type: "PUBLIC KEY", Bytes: x509.MarshalPKIXPublicKey(domainPublicKey)})
+	//ioutil.WriteFile(publicKeyPath + "/pubkey.pem", domainPubkeyOut.Bytes(), 0744)
+
 
 	// Generate cert
 	fmt.Println("Generating " + strconv.Itoa(num_of_cert) + " certificates. Encrypting...")
@@ -61,7 +77,7 @@ func main() {
 	hashlist := [][]byte{}
 	hashlist_string := [num_of_cert]string{}
 	for count < num_of_cert {
-		ca.gen_enc_cert(pubkey, count, domain_name, &hashlist, &hashlist_string)
+		ca.gen_enc_cert(&pubkey, count, domain_name, &hashlist, &hashlist_string)
 		count += 1
 	}
 
@@ -82,7 +98,7 @@ func main() {
 
 	fmt.Println("Preparing precertificate...")
 
-	genPreCert(domain_name, pubkey)
+	genPreCert(domain_name, &pubkey)
 	// fmt.Println("Merkle root: " + string(merkle_root))
 
 	fmt.Println("Listening to daily key request...")
@@ -120,33 +136,6 @@ func export_hashlist(hashlist [num_of_cert]string, domain_name string) {
 
 	datawriter.Flush()
 	hashlist_file.Close()
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
-func ParseRsaPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
-	// pubkeystring, _ := ExportRsaPublicKeyAsPemStr(&privatekey.PublicKey)
-	block, _ := pem.Decode([]byte(pubPEM))
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the key")
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		return pub, nil
-	default:
-		break // fall through
-	}
-	return nil, errors.New("Key type is not RSA")
 }
 
 func ExportRsaPublicKeyAsPemStr(pubkey *rsa.PublicKey) {
