@@ -37,10 +37,10 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 	certpath := "../storage/domain-certificates/" + domain_name
 	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0744)
+		os.MkdirAll(certpath, 0744)
 	}
 	if _, err := os.Stat(enc_certpath); os.IsNotExist(err) {
-		os.Mkdir(enc_certpath, 0744)
+		os.MkdirAll(enc_certpath, 0744)
 	}
 
 	// Get Root certificate
@@ -141,7 +141,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 
 	certpath := "../storage/precertificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0744)
+		os.MkdirAll(certpath, 0744)
 	}
 
 	// Load CA
