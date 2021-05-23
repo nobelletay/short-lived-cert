@@ -28,7 +28,7 @@ type Ca struct {
 
 // New constructs a new CA instance
 func new(master_key string) Ca {
-	catls, err := tls.LoadX509KeyPair("../storage/Root Certificate/ca_cert.pem", "../storage/Root Certificate/ca_key.pem")
+	catls, err := tls.LoadX509KeyPair("../storage/root-certificate/ca_cert.pem", "../storage/root-certificate/ca_key.pem")
 	check(err)
 	first_start_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, 0)
 	return Ca{catls, master_key, first_start_time}
@@ -49,7 +49,7 @@ func main() {
 
 	// Load domain RSA key
 	fmt.Println("Loading domain public key...")
-	key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
+	key, err := ioutil.ReadFile("../storage/domain-pubkey/" + domain_name + "/pub_key.pem")
 	check(err)
 
 	pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
