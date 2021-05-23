@@ -107,7 +107,7 @@ func export_hashlist(hashlist [num_of_cert]string, domain_name string) {
 	hashlist_folder := "../../CA-middle-daemon-storage/Hashlists/" + domain_name
 
 	if _, err := os.Stat(hashlist_folder); os.IsNotExist(err) {
-		os.Mkdir(hashlist_folder, 0700)
+		os.MkdirAll(hashlist_folder, 0700)
 	}
 	hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	check(err)
