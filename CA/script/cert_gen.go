@@ -18,6 +18,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/big"
+	"net"
 	"os"
 	"strconv"
 	"time"
@@ -56,6 +57,12 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		DNSNames:     []string{domain_name},
+	}
+
+	if ip := net.ParseIP(domain_name); ip != nil {
+		certificate.IPAddresses = append(certificate.IPAddresses, ip)
+	} else {
+		certificate.DNSNames = append(certificate.DNSNames, domain_name)
 	}
 
 	crt, err := x509.CreateCertificate(rand.Reader,
@@ -180,6 +187,13 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		DNSNames:        []string{domain_name},
 		ExtraExtensions: extension,
 	}
+
+	if ip := net.ParseIP(domain_name); ip != nil {
+		template.IPAddresses = append(template.IPAddresses, ip)
+	} else {
+		template.DNSNames = append(template.DNSNames, domain_name)
+	}
+
 	// privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
 	// if err != nil {
 	// 	panic(err)
