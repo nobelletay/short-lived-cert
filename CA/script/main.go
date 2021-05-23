@@ -129,7 +129,6 @@ func check(e error) {
 }
 
 func ParseRsaPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
-	// pubkeystring, _ := ExportRsaPublicKeyAsPemStr(&privatekey.PublicKey)
 	block, _ := pem.Decode([]byte(pubPEM))
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the key")
@@ -147,27 +146,4 @@ func ParseRsaPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
 		break // fall through
 	}
 	return nil, errors.New("Key type is not RSA")
-}
-
-func ExportRsaPublicKeyAsPemStr(pubkey *rsa.PublicKey) {
-	pubkey_bytes, err := x509.MarshalPKIXPublicKey(pubkey)
-	check(err)
-	pubkey_pem := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
-			Bytes: pubkey_bytes,
-		},
-	)
-
-	f, err := os.Create("./domain/pub_key.pem")
-	check(err)
-	l, err := f.WriteString(string(pubkey_pem))
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
-	}
-	fmt.Println(l, "bytes written successfully")
-	err = f.Close()
-	check(err)
 }
