@@ -28,7 +28,7 @@ type Ca struct {
 
 // New constructs a new CA instance
 func new(master_key string) Ca {
-	catls, err := tls.LoadX509KeyPair("../storage/Root Certificate/ca_cert.pem", "../storage/Root Certificate/ca_key.pem")
+	catls, err := tls.LoadX509KeyPair("../storage/root-certificate/ca_cert.pem", "../storage/root-certificate/ca_key.pem")
 	check(err)
 	first_start_time := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC).AddDate(0, 0, 0)
 	return Ca{catls, master_key, first_start_time}
@@ -49,7 +49,7 @@ func main() {
 
 	// Load domain RSA key
 	fmt.Println("Loading domain public key...")
-	key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
+	key, err := ioutil.ReadFile("../storage/domain-pubkey/" + domain_name + "/pub_key.pem")
 	check(err)
 
 	pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
@@ -107,7 +107,7 @@ func export_hashlist(hashlist [num_of_cert]string, domain_name string) {
 	hashlist_folder := "../../CA-middle-daemon-storage/Hashlists/" + domain_name
 
 	if _, err := os.Stat(hashlist_folder); os.IsNotExist(err) {
-		os.Mkdir(hashlist_folder, 0700)
+		os.MkdirAll(hashlist_folder, 0700)
 	}
 	hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	check(err)
@@ -129,7 +129,6 @@ func check(e error) {
 }
 
 func ParseRsaPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
-	// pubkeystring, _ := ExportRsaPublicKeyAsPemStr(&privatekey.PublicKey)
 	block, _ := pem.Decode([]byte(pubPEM))
 	if block == nil {
 		return nil, errors.New("failed to parse PEM block containing the key")
@@ -147,27 +146,4 @@ func ParseRsaPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
 		break // fall through
 	}
 	return nil, errors.New("Key type is not RSA")
-}
-
-func ExportRsaPublicKeyAsPemStr(pubkey *rsa.PublicKey) {
-	pubkey_bytes, err := x509.MarshalPKIXPublicKey(pubkey)
-	check(err)
-	pubkey_pem := pem.EncodeToMemory(
-		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
-			Bytes: pubkey_bytes,
-		},
-	)
-
-	f, err := os.Create("./domain/pub_key.pem")
-	check(err)
-	l, err := f.WriteString(string(pubkey_pem))
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return
-	}
-	fmt.Println(l, "bytes written successfully")
-	err = f.Close()
-	check(err)
 }
