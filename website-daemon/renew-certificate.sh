@@ -1,25 +1,16 @@
 #!/bin/bash
-cert_input_path="https://www.ieee-security.org/TC/W2SP/2012/papers/w2sp12-final9.pdf"
-cert_output_path="/home/nobellet/short-lived-cert/website-daemon/certificate.pdf"
 
-print_usage() {
-    printf "Usage: $0 [-i certificate_download_url] [-o certificate_path]\n"
-}
+domain_name=$(dig +short myip.opendns.com @resolver1.opendns.com)
 
-while getopts 'i:o:' flag; do
-    case "${flag}" in
-        i) cert_input_path="${OPTARG}" ;;
-        o) cert_output_path="${OPTARG}" ;;
-        *) print_usage
-           exit 1 ;;
-    esac
-done
+source_dir="/home/nobellet/short-lived-cert/"
 
-# Download short-lived certificate and Proof-of-Inclusion for the Merkle tree
-wget $cert_input_path -O $cert_output_path
+website_daemon_dir="${source_dir}/website-daemon/"
+nginx_dir="${source_dir}/web-server/"
+nginx_conf_filename="nginx.conf"
+nginx_conf_path="${nginx_dir}/${nginx_conf_filename}"
 
 # Update certificate path in web server config
-# Skipped since building a web server is out of the scope of this project
+python3 ${website_daemon_dir}/update-nginx-config.py
 
 # Reload the web server to pick up the new config
-# Skipped since building a web server is out of the scope of this project
+$HOME/.local/src/nginx-1.8.1/objs/nginx -s reload -c ${nginx_conf_path} -p ${nginx_dir}
