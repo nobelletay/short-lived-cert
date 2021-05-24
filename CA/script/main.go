@@ -37,62 +37,65 @@ func new(master_key string) Ca {
 func main() {
 	argsWithoutProg := os.Args[1:]
 
-	if len(argsWithoutProg) != 2 {
-		panic("Enter master key, domain name!")
+	if len(argsWithoutProg) != 1 {
+		panic("Enter master key!")
 	}
-	domain_name := os.Args[2]
 
 	// Load CA
 	fmt.Println("Initializing CA...")
 	master_key := os.Args[1]
 	ca := new(master_key)
 
-	// Load domain RSA key
-	fmt.Println("Loading domain public key...")
-	key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
-	check(err)
-
-	pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
-	check(err)
-
-	// Generate cert
-	fmt.Println("Generating " + strconv.Itoa(num_of_cert) + " certificates. Encrypting...")
-	count := 0
-	hashlist := [][]byte{}
-	hashlist_string := [num_of_cert]string{}
-	for count < num_of_cert {
-		ca.gen_enc_cert(pubkey, count, domain_name, &hashlist, &hashlist_string)
-		count += 1
-	}
-
-	fmt.Println("Exporting hashlist...")
-	export_hashlist(hashlist_string, domain_name)
-
-	// Get merkle root
-	ex, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	exPath := filepath.Dir(ex)
-
-	c := exec.Command("python", exPath+"/CAmroot.py", domain_name)
-	if err := c.Run(); err != nil {
-		fmt.Println("Error: ", err)
-	}
-
-	fmt.Println("Preparing precertificate...")
-
-	genPreCert(domain_name, pubkey)
-	// fmt.Println("Merkle root: " + string(merkle_root))
-
-	fmt.Println("Listening to daily key request...")
 	for {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			words := strings.Fields(scanner.Text())
-			count, err := strconv.Atoi(words[1])
-			check(err)
-			ca.main_daykey(words[0], count)
+			switch intruction := words[0]; intruction {
+			case "issue":
+				domain_name := words[1]
+				// Load domain RSA key
+				fmt.Println("Loading domain public key...")
+				key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
+				check(err)
+
+				pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
+				check(err)
+
+				// Generate cert
+				fmt.Println("Generating " + strconv.Itoa(num_of_cert) + " certificates. Encrypting...")
+				count := 0
+				hashlist := [][]byte{}
+				hashlist_string := [num_of_cert]string{}
+				for count < num_of_cert {
+					ca.gen_enc_cert(pubkey, count, domain_name, &hashlist, &hashlist_string)
+					count += 1
+				}
+
+				fmt.Println("Exporting hashlist...")
+				export_hashlist(hashlist_string, domain_name)
+
+				// Get merkle root
+				ex, err := os.Executable()
+				if err != nil {
+					panic(err)
+				}
+				exPath := filepath.Dir(ex)
+
+				c := exec.Command("python", exPath+"/CAmroot.py", domain_name)
+				if err := c.Run(); err != nil {
+					fmt.Println("Error: ", err)
+				}
+
+				fmt.Println("Preparing precertificate...")
+
+				genPreCert(domain_name, pubkey)
+
+			case "key":
+				domain_name := words[1]
+				count, err := strconv.Atoi(words[2])
+				check(err)
+				ca.main_daykey(domain_name, count)
+			}
 		}
 
 		if scanner.Err() != nil {
