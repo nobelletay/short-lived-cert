@@ -30,10 +30,11 @@ hash_file.close()
 tree = MerkleTree(hash_list, hashfunc)
 
 root = tree.merkle_root
-Path("../storage/Merkle Roots/" + dom_name).mkdir(parents=True, exist_ok=True)
+
+Path("../storage/merkle-roots/" + dom_name).mkdir(parents=True, exist_ok=True)
 
 
-root_file = "../storage/Merkle Roots/" + dom_name + "/merkleroot.txt"
+root_file = "../storage/merkle-roots/" + dom_name + "/merkleroot.txt"
 
 text_file = open(root_file, "w+")
 n = text_file.write(root)

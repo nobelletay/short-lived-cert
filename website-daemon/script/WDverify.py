@@ -19,7 +19,6 @@ with open(proof_path, 'rb') as f:
     proof = pickle.load(f)
     
 hash_path = "../storage/Daily Cert Verification/cert_hash.txt"
-# root_path = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/merkleroot.txt"
 
 
 with open(hash_path) as f:
@@ -27,10 +26,6 @@ with open(hash_path) as f:
 
 cert_hash = contents[0]
 
-# with open(root_path) as f:
-#     contents = f.readlines()
-
-# root = contents[0]
 result_file = "../storage/result/result.txt"
 
 text_file = open(result_file, "w+")
