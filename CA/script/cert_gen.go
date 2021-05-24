@@ -18,29 +18,21 @@ import (
 	"io/ioutil"
 	"log"
 	"math/big"
+	"net"
 	"os"
 	"strconv"
 	"time"
 )
 
-// GenRSA returns a new RSA key of bits length
-func GenRSA(*rsa.PrivateKey, error) *rsa.PrivateKey {
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-	return key
-}
-
 func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, hash_list *[][]byte, hashlist_string *[num_of_cert]string) {
 	// Prepare directory
-	certpath := "../storage/Domain Certificates/" + domain_name
+	certpath := "../storage/domain-certificates/" + domain_name
 	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.MkdirAll(certpath, 0744)
 	}
 	if _, err := os.Stat(enc_certpath); os.IsNotExist(err) {
-		os.Mkdir(enc_certpath, 0700)
+		os.MkdirAll(enc_certpath, 0744)
 	}
 
 	// Get Root certificate
@@ -56,6 +48,12 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 		KeyUsage:     x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 		DNSNames:     []string{domain_name},
+	}
+
+	if ip := net.ParseIP(domain_name); ip != nil {
+		certificate.IPAddresses = append(certificate.IPAddresses, ip)
+	} else {
+		certificate.DNSNames = append(certificate.DNSNames, domain_name)
 	}
 
 	crt, err := x509.CreateCertificate(rand.Reader,
@@ -101,37 +99,6 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 }
 
 func ByteSlice(b []byte) []byte { return b }
-
-func genCA() {
-	ca := x509.Certificate{
-		SerialNumber:          big.NewInt(time.Now().Unix()),
-		Subject:               pkix.Name{Organization: []string{"localhost"}},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
-		IsCA:                  true,
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-		DNSNames:              []string{"localhost"},
-	}
-	Caprivatekey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		panic(err)
-	}
-	Cacrt, err := x509.CreateCertificate(rand.Reader,
-		&ca,
-		&ca,
-		&Caprivatekey.PublicKey,
-		Caprivatekey)
-	if err != nil {
-		panic(err)
-	}
-	var CacertOut, CakeyOut bytes.Buffer
-	pem.Encode(&CacertOut, &pem.Block{Type: "CERTIFICATE", Bytes: Cacrt})
-	pem.Encode(&CakeyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(Caprivatekey)})
-	ioutil.WriteFile("./ca/ca_cert.pem", CacertOut.Bytes(), 0644)
-	ioutil.WriteFile("./ca/ca_key.pem", CakeyOut.Bytes(), 0644)
-}
 
 func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	merkle_root_value, err := ioutil.ReadFile("../storage/Merkle Roots/" + domain_name + "/merkleroot.txt")
@@ -198,6 +165,13 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		DNSNames:        []string{domain_name},
 		ExtraExtensions: extension,
 	}
+
+	if ip := net.ParseIP(domain_name); ip != nil {
+		template.IPAddresses = append(template.IPAddresses, ip)
+	} else {
+		template.DNSNames = append(template.DNSNames, domain_name)
+	}
+
 	// privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
 	// if err != nil {
 	// 	panic(err)

@@ -31,7 +31,7 @@ func (ca Ca) main_daykey(domain_name string, num_of_cert int) {
 	// count := 0
 	keypath := "../../CA-middle-daemon-storage/Daily Keys/" + domain_name
 	if _, err := os.Stat(keypath); os.IsNotExist(err) {
-		os.Mkdir(keypath, 0700)
+		os.MkdirAll(keypath, 0700)
 	}
 	// for count < num_of_cert {
 	key := ca.gen_day_key(domain_name, num_of_cert)
