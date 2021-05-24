@@ -101,13 +101,13 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 func ByteSlice(b []byte) []byte { return b }
 
 func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
-	merkle_root_value, err := ioutil.ReadFile("../storage/Merkle Roots/" + domain_name + "/merkleroot.txt")
+	merkle_root_value, err := ioutil.ReadFile("../storage/merkle-roots/" + domain_name + "/merkleroot.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// fmt.Println(string(merkle_root_value))
 
-	certpath := "../storage/Precertificate/" + domain_name
+	certpath := "../storage/precertificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.Mkdir(certpath, 0700)
 	}
@@ -117,13 +117,13 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		log.Fatal(err)
 	}
 
-	sharedcertpath := "../../CA-middle-daemon-storage/Precertificate/" + domain_name
+	sharedcertpath := "../../CA-middle-daemon-storage/precertificate/" + domain_name
 	if _, err := os.Stat(sharedcertpath); os.IsNotExist(err) {
 		os.Mkdir(sharedcertpath, 0700)
 	}
 
 	// Load CA
-	catls, err := tls.LoadX509KeyPair("../storage/Root Certificate/ca_cert.pem", "../storage/Root Certificate/ca_key.pem")
+	catls, err := tls.LoadX509KeyPair("../storage/root-certificate/ca_cert.pem", "../storage/root-certificate/ca_key.pem")
 	if err != nil {
 		panic(err)
 	}

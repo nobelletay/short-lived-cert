@@ -55,7 +55,7 @@ func main() {
 				domain_name := words[1]
 				// Load domain RSA key
 				fmt.Println("Loading domain public key...")
-				key, err := ioutil.ReadFile("../storage/Domain Pubkey/" + domain_name + "/pub_key.pem")
+				key, err := ioutil.ReadFile("../storage/domain-pubkey/" + domain_name + "/pub_key.pem")
 				check(err)
 
 				pubkey, err := ParseRsaPublicKeyFromPemStr(string(key))
