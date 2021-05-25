@@ -17,9 +17,9 @@ def hashfunc(value):
 dom_name = sys.argv[1]
 
 file_name = "../../CA-middle-daemon-storage/Hashlists/" + dom_name + "/hashlist.txt"
-
+Path("../storage/merkle-roots/" + dom_name).mkdir(parents=True, exist_ok=True)
+root_file = "../storage/merkle-roots/" + dom_name + "/merkleroot.txt"
 hash_file = open(file_name, 'r')
-
 
 hash_list = []
 for line in hash_file:
@@ -28,12 +28,7 @@ for line in hash_file:
 hash_file.close()
 
 tree = MerkleTree(hash_list, hashfunc)
-
 root = tree.merkle_root
-Path("../storage/merkle-roots/" + dom_name).mkdir(parents=True, exist_ok=True)
-
-
-root_file = "../storage/merkle-roots/" + dom_name + "/merkleroot.txt"
 
 text_file = open(root_file, "w+")
 n = text_file.write(root)

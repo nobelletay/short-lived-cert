@@ -105,10 +105,21 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// fmt.Println(string(merkle_root_value))
 
 	certpath := "../storage/precertificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.MkdirAll(certpath, 0744)
+	}
+
+	sct_value, err := ioutil.ReadFile("../storage/sct/" + domain_name + "/sct.pem")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sharedcertpath := "../../CA-middle-daemon-storage/precertificate/" + domain_name
+	if _, err := os.Stat(sharedcertpath); os.IsNotExist(err) {
+		os.Mkdir(sharedcertpath, 0744)
 	}
 
 	// Load CA
@@ -121,7 +132,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		panic(err)
 	}
 
-	var extension = make([]pkix.Extension, 2)
+	var extension = make([]pkix.Extension, 3)
 	poison_extension := pkix.Extension{
 		Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 3},
 		Critical: true,
@@ -136,6 +147,13 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 		Value: merkle_root_value,
 	}
 	extension[1] = merkle_root
+
+	sct_extension := pkix.Extension{
+		Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 2},
+		Critical: false,
+		Value:    sct_value,
+	}
+	extension[2] = sct_extension
 
 	template := x509.Certificate{
 		SerialNumber:    big.NewInt(time.Now().Unix()),
@@ -169,7 +187,8 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	var certOut bytes.Buffer
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
 	// pem.Encode(&keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)})
-	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0744)
-	ioutil.WriteFile(certpath+"/cert.pem", certOut.Bytes(), 0744)
+	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0644)
+	ioutil.WriteFile(certpath+"/precert.pem", certOut.Bytes(), 0744)
+	ioutil.WriteFile(sharedcertpath+"/precert.pem", certOut.Bytes(), 0744)
 
 }

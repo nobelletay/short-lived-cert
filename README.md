@@ -22,10 +22,11 @@ $ go build
 To create encrypted certificates and generate a daily key, run the following:
 
 ```
-$ ./CA [masterkey] [domain_name]
+$ ./CA [masterkey] 
 ...
 Listening to daily key request...
-[domain_name] [num_of_day]
+issue [domain_name]
+key [domain_name] [num_of_day]
 ```
 
 ### Middle daemon
