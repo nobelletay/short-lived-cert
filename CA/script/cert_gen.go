@@ -109,7 +109,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 
 	certpath := "../storage/precertificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.Mkdir(certpath, 0700)
+		os.MkdirAll(certpath, 0744)
 	}
 
 	sct_value, err := ioutil.ReadFile("../storage/sct/" + domain_name + "/sct.pem")
@@ -119,7 +119,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 
 	sharedcertpath := "../../CA-middle-daemon-storage/precertificate/" + domain_name
 	if _, err := os.Stat(sharedcertpath); os.IsNotExist(err) {
-		os.Mkdir(sharedcertpath, 0700)
+		os.Mkdir(sharedcertpath, 0744)
 	}
 
 	// Load CA
@@ -188,7 +188,7 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
 	// pem.Encode(&keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)})
 	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0644)
-	ioutil.WriteFile(certpath+"/precert.pem", certOut.Bytes(), 0644)
-	ioutil.WriteFile(sharedcertpath+"/precert.pem", certOut.Bytes(), 0644)
+	ioutil.WriteFile(certpath+"/precert.pem", certOut.Bytes(), 0744)
+	ioutil.WriteFile(sharedcertpath+"/precert.pem", certOut.Bytes(), 0744)
 
 }

@@ -28,7 +28,7 @@ func main() {
 			sourceFile := "../../CA-middle-daemon-storage/Precertificate/" + domain_name + "/precert.pem"
 			destinationfolder := "../../middle-daemon-website-daemon-storage/Precertificate/" + domain_name
 			if _, err := os.Stat(destinationfolder); os.IsNotExist(err) {
-				os.Mkdir(destinationfolder, 0700)
+				os.Mkdir(destinationfolder, 0744)
 			}
 			copy_file(sourceFile, destinationfolder+"/precert.pem")
 			fmt.Println("Decrypting certificates...")
@@ -64,7 +64,7 @@ func copy_file(sourceFile string, destinationFile string) {
 		return
 	}
 
-	err = ioutil.WriteFile(destinationFile, input, 0644)
+	err = ioutil.WriteFile(destinationFile, input, 0744)
 	if err != nil {
 		fmt.Println("Error creating", destinationFile)
 		fmt.Println(err)
