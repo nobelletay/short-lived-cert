@@ -16,7 +16,7 @@ def hashfunc(value):
 
 dom_name = sys.argv[1]
 day_num = sys.argv[2]
-file_name = "../../CA-middle-daemon-storage/Hashlists/" + dom_name + "/hashlist.txt"
+file_name = "../storage/hashlist/" + dom_name + "/hashlist.txt"
 
 hash_file = open(file_name, 'r')
 

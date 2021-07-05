@@ -24,10 +24,10 @@ import (
 	"time"
 )
 
-func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, hash_list *[][]byte, hashlist_string *[num_of_cert]string) {
+func (ca *Server) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, salt_time string) (string, string) {
 	// Prepare directory
 	certpath := "../storage/domain-certificates/" + domain_name
-	enc_certpath := "../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name
+	enc_certpath := "../storage/encrypted-certificates/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.MkdirAll(certpath, 0744)
 	}
@@ -37,7 +37,9 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 
 	// Get Root certificate
 	cert_auth, err := x509.ParseCertificate(ca.certificate.Certificate[0])
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Generate certificate
 	certificate := x509.Certificate{
@@ -61,65 +63,48 @@ func (ca Ca) gen_enc_cert(pubkey *rsa.PublicKey, count int, domain_name string, 
 		cert_auth,
 		pubkey,
 		ca.certificate.PrivateKey)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Export original certificate
 	var certOut bytes.Buffer
 	certfilepath := certpath + "/cert" + strconv.Itoa(count) + ".pem"
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
 	f, err := os.Create(certfilepath)
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	l, err := f.Write(certOut.Bytes()) // Certificate written in byte
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println(l, "bytes written successfully --- Original certificate in CA's storage")
 	err = f.Close()
-	check(err)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Encrypt certificate and export
-	salt := domain_name + time.Time.String(ca.first_start_time.AddDate(0, 0, count))
+	salt := domain_name + salt_time
 	encrypt_key := kdf(ca.master_key, salt)
 	enc_cert := encrypt(string(certOut.Bytes()), hex.EncodeToString(encrypt_key[:]))
-	enc_certfilepath := enc_certpath + "/enc_cert" + strconv.Itoa(count) + ".txt"
-	f, err = os.Create(enc_certfilepath)
-	check(err)
-
-	l, err = f.WriteString(enc_cert) // Encrypted certificate written in string
-	check(err)
-
-	fmt.Println(l, "bytes written successfully --- Encrypted certificate in shared storage")
-	err = f.Close()
-	check(err)
-
-	// Add to hash list
-	hash_cert := hash(string(certOut.Bytes()))
-	hashlist_string[count] = hex.EncodeToString(hash_cert[:]) // Hash list written in string
-	*hash_list = append((*hash_list)[:], ByteSlice(hash_cert))
-
+	hash_cert := hex.EncodeToString(hash(string(certOut.Bytes()))[:])
+	return enc_cert, hash_cert
 }
 
 func ByteSlice(b []byte) []byte { return b }
 
-func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
+func genPreCert(domain_name string, pubkey *rsa.PublicKey) []byte {
 	merkle_root_value, err := ioutil.ReadFile("../storage/merkle-roots/" + domain_name + "/merkleroot.txt")
 	if err != nil {
 		log.Fatal(err)
-	}
-	// fmt.Println(string(merkle_root_value))
-
-	certpath := "../storage/precertificate/" + domain_name
-	if _, err := os.Stat(certpath); os.IsNotExist(err) {
-		os.MkdirAll(certpath, 0744)
 	}
 
 	sct_value, err := ioutil.ReadFile("../storage/sct/" + domain_name + "/sct.pem")
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	sharedcertpath := "../../CA-middle-daemon-storage/precertificate/" + domain_name
-	if _, err := os.Stat(sharedcertpath); os.IsNotExist(err) {
-		os.Mkdir(sharedcertpath, 0744)
 	}
 
 	// Load CA
@@ -186,9 +171,6 @@ func genPreCert(domain_name string, pubkey *rsa.PublicKey) {
 	}
 	var certOut bytes.Buffer
 	pem.Encode(&certOut, &pem.Block{Type: "CERTIFICATE", Bytes: crt})
-	// pem.Encode(&keyOut, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(privatekey)})
-	// ioutil.WriteFile("./precert/key.pem", keyOut.Bytes(), 0644)
-	ioutil.WriteFile(certpath+"/precert.pem", certOut.Bytes(), 0744)
-	ioutil.WriteFile(sharedcertpath+"/precert.pem", certOut.Bytes(), 0744)
+	return certOut.Bytes()
 
 }

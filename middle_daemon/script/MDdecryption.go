@@ -10,22 +10,10 @@ import (
 	"strconv"
 )
 
-func main_decrypt(domain_name string, num_of_cert int) {
-	keypath := "../../CA-middle-daemon-storage/Daily Keys/" + domain_name + "/daily_key.txt"
-	// count := 0
-	// for count < num_of_cert {
-	// Read entire file content
-	daily_key, err := ioutil.ReadFile(keypath)
-	check(err)
-
-	// err = os.Remove(keypath)
-	// check(err)
-
-	// Convert []byte to string
-	key := string(daily_key)
+func main_decrypt(domain_name string, num_of_cert int, key string) {
 
 	// Read entire file content
-	cipher, err := ioutil.ReadFile("../../CA-middle-daemon-storage/Encrypted Certificates/" + domain_name + "/enc_cert" + strconv.Itoa(num_of_cert) + ".txt")
+	cipher, err := ioutil.ReadFile("../storage/encrypted-certificates/" + domain_name + "/enc_cert" + strconv.Itoa(num_of_cert) + ".txt")
 	check(err)
 
 	// Convert []byte to string
@@ -33,7 +21,7 @@ func main_decrypt(domain_name string, num_of_cert int) {
 
 	decrypted := decrypt(encrypted, key)
 
-	certpath := "../../middle-daemon-website-daemon-storage/Daily Certificates/" + domain_name
+	certpath := "../../middle-daemon-website-daemon-storage/certificate/" + domain_name
 	if _, err := os.Stat(certpath); os.IsNotExist(err) {
 		os.Mkdir(certpath, 0700)
 	}

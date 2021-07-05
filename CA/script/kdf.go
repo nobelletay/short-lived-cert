@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 )
 
-func kdf(password string, salt string) [32]uint8 {
+func kdf(password []byte, salt string) [32]uint8 {
 	// generate the derived key
 	// base on the input parameter
 	// password to stretch

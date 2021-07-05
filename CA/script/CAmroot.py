@@ -16,7 +16,7 @@ def hashfunc(value):
 
 dom_name = sys.argv[1]
 
-file_name = "../../CA-middle-daemon-storage/Hashlists/" + dom_name + "/hashlist.txt"
+file_name = "../storage/hashlist/" + dom_name + "/hashlist.txt"
 Path("../storage/merkle-roots/" + dom_name).mkdir(parents=True, exist_ok=True)
 root_file = "../storage/merkle-roots/" + dom_name + "/merkleroot.txt"
 hash_file = open(file_name, 'r')

@@ -31,7 +31,7 @@ func main() {
 			domain_name := words[0]
 
 			fmt.Println("Hashing certificate and exporting...")
-			root := "../../middle-daemon-website-daemon-storage/Daily Certificates/"
+			root := "../../middle-daemon-website-daemon-storage/certificate/"
 			folder := root + domain_name
 
 			cert, err := ioutil.ReadFile(folder + "/certday" + day_num + ".pem")
@@ -56,7 +56,7 @@ func main() {
 			check(err)
 
 			fmt.Println("Loading Precertificate...")
-			folder = "../../middle-daemon-website-daemon-storage/Precertificate/" + domain_name
+			folder = "../../middle-daemon-website-daemon-storage/precertificate/" + domain_name
 
 			precert, err := ioutil.ReadFile(folder + "/precert.pem")
 			check(err)
