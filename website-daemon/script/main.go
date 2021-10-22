@@ -30,31 +30,17 @@ func main() {
 			day_num := words[1]
 			domain_name := words[0]
 
-			fmt.Println("Hashing certificate and exporting...")
+			fmt.Println("Get certificate and hash...")
 			root := "../../middle-daemon-website-daemon-storage/certificate/"
 			folder := root + domain_name
 
 			cert, err := ioutil.ReadFile(folder + "/certday" + day_num + ".pem")
 			check(err)
 			cert_text := string(cert)
-
 			hash := hash(cert_text)
-
 			cert_hash := hex.EncodeToString(hash[:])
 
-			f, err := os.Create("../storage/Daily Cert Verification/cert_hash.txt")
-			check(err)
-
-			l, err := f.WriteString(cert_hash)
-			if err != nil {
-				fmt.Println(err)
-				f.Close()
-				return
-			}
-			fmt.Println(l, "bytes written successfully --- Certificate hash written to storage")
-			err = f.Close()
-			check(err)
-
+			// Get Merkle root from precertificate
 			fmt.Println("Loading Precertificate...")
 			folder = "../../middle-daemon-website-daemon-storage/precertificate/" + domain_name
 
@@ -70,6 +56,7 @@ func main() {
 			}
 
 			merkle_root := certificate.Extensions[5].Value
+			fmt.Println("root: " + string(merkle_root))
 
 			fmt.Println("Verifying proof...")
 			// fmt.Println(string(merkle_root))
@@ -77,7 +64,7 @@ func main() {
 			check(err)
 			exPath := filepath.Dir(ex)
 			file := exPath + "/WDverify.py"
-			c := exec.Command("python", file, string(merkle_root))
+			c := exec.Command("python", file, string(merkle_root), cert_hash)
 			if err := c.Run(); err != nil {
 				check(err)
 			}

@@ -28,18 +28,14 @@ import (
 // Subject to change
 const num_of_cert = 3
 
+/// CA server info
 type Server struct {
 	pb.UnimplementedCertServiceServer
 	certificate tls.Certificate
 	master_key  []byte
 }
 
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
+/// Issue short-lived certificates to Middle Daemon
 func (ca *Server) Issue(in *pb.DomainInfo, stream pb.CertService_IssueServer) error {
 	domain := in.Domain
 	pubkey, err := ParseRsaPublicKeyFromPemStr(in.Pubkey)
@@ -52,22 +48,25 @@ func (ca *Server) Issue(in *pb.DomainInfo, stream pb.CertService_IssueServer) er
 	if _, err := os.Stat(hashlist_folder); os.IsNotExist(err) {
 		os.MkdirAll(hashlist_folder, 0744)
 	}
-	hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_CREATE|os.O_WRONLY, 0644)
 	check(err)
 	datawriter := bufio.NewWriter(hashlist_file)
 
-	fmt.Println("Generating " + strconv.Itoa(num_of_cert) + " certificates. Encrypting...")
+	// Generate, encrypt and hash short-lived certificates
+	fmt.Println("Generating " + strconv.Itoa(num_of_cert) + " certificates.")
+	fmt.Println("Encrypting and hashing certificates")
 	count := 0
 	now := time.Now()
-	now_string := now.Format(time.RFC3339)
 
 	cert_list := []string{}
 	hash_list := []string{}
+	time_list := []string{}
 	for count < num_of_cert {
 		salt_time := now.AddDate(0, 0, count).Format(time.RFC3339)
 		enc_cert, hash_cert := ca.gen_enc_cert(pubkey, count, domain, salt_time)
 		cert_list = append(cert_list[:], enc_cert)
 		hash_list = append(hash_list[:], hash_cert)
+		time_list = append(time_list[:], salt_time)
 		datawriter.WriteString(hash_cert + "\n")
 		count += 1
 	}
@@ -92,7 +91,7 @@ func (ca *Server) Issue(in *pb.DomainInfo, stream pb.CertService_IssueServer) er
 
 	i := 0
 	for i < num_of_cert {
-		if err := stream.Send(&pb.Cert{Cert: cert_list[i], Hash: hash_list[i], Time: now_string, Precert: string(precert)}); err != nil {
+		if err := stream.Send(&pb.Cert{Cert: cert_list[i], Hash: hash_list[i], Time: time_list[i], Precert: string(precert)}); err != nil {
 			return err
 		}
 		i++
@@ -101,6 +100,7 @@ func (ca *Server) Issue(in *pb.DomainInfo, stream pb.CertService_IssueServer) er
 	return nil
 }
 
+/// Release daily decryption key to Middle Daemon
 func (ca *Server) RequestKey(ctx context.Context, in *pb.KeyRequest) (*pb.Key, error) {
 	domain_name := in.Domain
 	time := in.Time
@@ -108,11 +108,13 @@ func (ca *Server) RequestKey(ctx context.Context, in *pb.KeyRequest) (*pb.Key, e
 
 	return &pb.Key{Dailykey: key}, nil
 }
+
 func main() {
 
 	// initialze CA
 	fmt.Println("Initializing CA...")
 	token := make([]byte, 128)
+	// initialize secret key
 	rand.Read(token)
 	master_key := token
 	catls, err := tls.LoadX509KeyPair("../storage/root-certificate/ca_cert.pem", "../storage/root-certificate/ca_key.pem")
@@ -128,8 +130,8 @@ func main() {
 		log.Fatal("cannot load TLS credentials: ", err)
 	}
 
+	// Listening request from Middle Daemon
 	fmt.Println("Listening from middle daemon...")
-	// connection
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 9000))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -196,4 +198,10 @@ func loadTLSCredentials() (credentials.TransportCredentials, error) {
 	}
 
 	return credentials.NewTLS(config), nil
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

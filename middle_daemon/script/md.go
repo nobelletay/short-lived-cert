@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -28,24 +27,20 @@ import (
 // Subject to change
 const num_of_cert = 3
 
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
+/// Mapping domain name to certificate starting time
 type Middledm struct {
-	domain_time_map map[string]string
+	domain_time_map map[string][]string
 }
 
 func main() {
+	md := Middledm{make(map[string][]string)}
 	// establish TLS credentials
 	tlsCredentials, err := loadTLSCredentials()
 	if err != nil {
 		log.Fatal("cannot load TLS credentials: ", err)
 	}
 
-	// connect
+	// connect to CA
 	var conn *grpc.ClientConn
 	conn, err = grpc.Dial(":9000", grpc.WithTransportCredentials(tlsCredentials))
 	if err != nil {
@@ -79,6 +74,7 @@ func main() {
 				pubkey_string, err := ExportRsaPublicKeyAsPemStr(pubkey)
 				check(err)
 
+				// Request short-lived certificates
 				stream, err := c.Issue(context.Background(), &pb.DomainInfo{Domain: domain_name, Pubkey: pubkey_string})
 				check(err)
 
@@ -92,33 +88,18 @@ func main() {
 					check(err)
 					enc_cert := cert.Cert
 					hash_cert := cert.Hash
-
 					hashlist[count] = hash_cert
-
+					md.domain_time_map[domain_name] = append(md.domain_time_map[domain_name], cert.Time)
 					if count == 0 {
-						// store domain start time
-						time_path := "../storage/domain-start-time/" + domain_name
-						if _, err := os.Stat(time_path); os.IsNotExist(err) {
-							os.MkdirAll(time_path, 0744)
-						}
-						time_filepath := time_path + "/start-time.txt"
-						f, err := os.Create(time_filepath)
-						check(err)
-						l, err := f.WriteString(cert.Time)
-						check(err)
-						fmt.Println(l, "bytes written successfully --- Start time stored")
-						err = f.Close()
-						check(err)
-
 						// deliver precertificate
 						precertfolder := "../../middle-daemon-website-daemon-storage/precertificate/" + domain_name
 						if _, err := os.Stat(precertfolder); os.IsNotExist(err) {
 							os.Mkdir(precertfolder, 0744)
 						}
 						precertfile := precertfolder + "/precert.pem"
-						f, err = os.Create(precertfile)
+						f, err := os.Create(precertfile)
 						check(err)
-						l, err = f.WriteString(cert.Precert)
+						l, err := f.WriteString(cert.Precert)
 						check(err)
 						fmt.Println(l, "bytes written successfully --- Precertificate delivered")
 						err = f.Close()
@@ -148,7 +129,7 @@ func main() {
 				if _, err := os.Stat(hashlist_folder); os.IsNotExist(err) {
 					os.MkdirAll(hashlist_folder, 0744)
 				}
-				hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				hashlist_file, err := os.OpenFile(hashlist_folder+"/hashlist.txt", os.O_CREATE|os.O_WRONLY, 0644)
 				check(err)
 
 				datawriter := bufio.NewWriter(hashlist_file)
@@ -165,12 +146,10 @@ func main() {
 				check(err)
 
 				// Read start time
-				start_time_byte, err := ioutil.ReadFile("../storage/domain-start-time/" + domain + "/start-time.txt")
-				check(err)
-				start_time_string := string(start_time_byte)
-				start_time, err := time.Parse(time.RFC3339, start_time_string)
-				now := start_time.AddDate(0, 0, count).Format(time.RFC3339)
+				now := md.domain_time_map[domain][0]
+				md.domain_time_map[domain] = md.domain_time_map[domain][1:]
 
+				// Request daily key
 				response, err := c.RequestKey(context.Background(), &pb.KeyRequest{Domain: domain, Time: now})
 				check(err)
 
@@ -252,4 +231,10 @@ func loadTLSCredentials() (credentials.TransportCredentials, error) {
 	}
 
 	return credentials.NewTLS(config), nil
+}
+
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
 }

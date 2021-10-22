@@ -14,17 +14,10 @@ def hashfunc(value):
     return hashlib.sha256(value).hexdigest()
 
 root = sys.argv[1]
+cert_hash = sys.argv[2]
 proof_path = "../../middle-daemon-website-daemon-storage/Daily Cert Verification/proof.pickle"
 with open(proof_path, 'rb') as f:
     proof = pickle.load(f)
-    
-hash_path = "../storage/Daily Cert Verification/cert_hash.txt"
-
-
-with open(hash_path) as f:
-    contents = f.readlines()
-
-cert_hash = contents[0]
 
 result_file = "../storage/result/result.txt"
 
